@@ -1,10 +1,77 @@
 import docker
+import ollama
+
 client = docker.from_env()
-containers = client.containers.list()
+
+
 def get_containers():
-    
-    
+    containers = client.containers.list()
     for c in containers:
         print(f"Name: {c.name}, Status: {c.status}, ID: {c.short_id}")
 
-get_containers() 
+def detect_issues():
+    containers = client.containers.list(all=True)
+    issues = []
+    for c in containers:
+        if c.status in ["exited", "dead"]:
+            issues.append({
+                "name": c.name,
+                "status": c.status,
+                "id": c.short_id
+            })
+    return issues
+
+def get_logs(container_name):
+    try:
+        container = client.containers.list(all=True)
+        for c in container:
+            if c.name == container_name:
+                logs =  c.logs(tail=50).decode('utf-8')
+                return logs if logs else "No logs available."
+    except Exception as e:
+        return f"Error retrieving logs: {str(e)}"
+
+def analyze_logs(logs, container_name):
+    print(f"Analyzing logs for : {container_name}...")
+
+    response = ollama.chat(
+        model = "mistral",
+        messages = [{
+            "role": "system",
+            "content": "You are a DevOps assistant. Analyze Docker container failures concisely. Give: 1) Cause 2) Fix."
+        }, {
+            "role": "user",
+            "content": f"Container '{container_name}' failed.\n\nLogs:\n{logs}\n\nWhat caused this and how to fix it?"
+        }]
+    )
+    return response ["message"]["content"]
+
+def fix_container(container_name):
+    try:
+        container = client.containers.list(all=True)
+        for c in container:
+            if c.name == container_name:
+                c.restart()
+                return f"Container '{container_name}' restarted successfully."
+    except Exception as e:
+        return f"Error restarting container: {str(e)}"
+    
+
+print("Analyzing Docker containers...")
+get_containers()
+
+issues = detect_issues()
+
+if issues:
+    for issue in issues:
+        print(f"\nIssue detected in container: {issue['name']} (Status: {issue['status']})")
+        logs = get_logs(issue['name'])
+
+        analysis = analyze_logs(logs, issue['name'])
+        print(f"Analysis:\n{analysis}")
+        fix_result = fix_container(issue['name'])
+        print(f"Fix result: {fix_result}")
+else:
+    print("No issues detected in Docker containers.")   
+
+    

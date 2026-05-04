@@ -3,3 +3,4 @@ linkup
 langchain
 fastapi
 docker
+ollama
