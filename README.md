@@ -142,7 +142,7 @@ python3 agents.py
 - [x] **Step 1** — List all running Docker containers
 - [x] **Step 2** — Detect unhealthy/exited containers
 - [x] **Step 3** — Auto-restart failed containers
-- [ ] **Step 4** — LLM-powered failure analysis (OpenAI)
+- [x] **Step 4** — LLM-powered failure analysis (OpenAI)
 - [ ] **Step 5** — Multi-agent architecture (CrewAI)
 - [ ] **Step 6** — Incident memory (FAISS + MCP)
 - [ ] **Step 7** — Full observability (Langfuse + eval suite)
