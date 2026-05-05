@@ -1,5 +1,8 @@
 import docker
 import ollama
+import time
+import logging
+from datetime import datetime
 
 client = docker.from_env()
 
@@ -35,13 +38,13 @@ def analyze_logs(logs, container_name):
     print(f"Analyzing logs for : {container_name}...")
 
     response = ollama.chat(
-        model = "mistral",
+        model = "llama3.2:latest",
         messages = [{
             "role": "system",
             "content": "You are a DevOps assistant. Analyze Docker container failures concisely. Give: 1) Cause 2) Fix."
         }, {
             "role": "user",
-            "content": f"Container '{container_name}' failed.\n\nLogs:\n{logs}\n\nWhat caused this and how to fix it?"
+            "content": f"Container '{container_name}' has stopped unexpectedly (status: exited).\n\nLast 50 lines of logs:\n{logs}\n\n1) What caused this container to stop?\n2) What is the exact fix?"
         }]
     )
     return response ["message"]["content"]
