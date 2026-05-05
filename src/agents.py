@@ -77,4 +77,8 @@ if issues:
 else:
     print("No issues detected in Docker containers.")   
 
+
+
+if __name__ == "__main__":
+    run_agent()
     
