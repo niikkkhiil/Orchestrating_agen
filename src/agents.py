@@ -63,28 +63,7 @@ def fix_container(container_name):
 print("Analyzing Docker containers...")
 get_containers()
 
-def run_agent():
-    logging.info("🚀 Self-Healing Agent started. Monitoring every 30 seconds...")
 
-    while True:
-        logging.info("🔍 Scanning containers...")
-
-        issues = detect_issues()
-
-        if issues:
-            for issue in issues:
-                logging.info(f"⚠ Issue found: {issue['name']} ({issue['status']})")
-
-                logs = get_logs(issue["name"])
-                diagnosis = analyze_failure(issue["name"], logs)
-
-                logging.info(f"📋 Diagnosis for {issue['name']}:\n{diagnosis}")
-
-                fix_container(issue["name"])
-        else:
-            logging.info("✅ All containers healthy")
-
-        logging.info("⏳ Next scan in 30 seconds...\n")
 
 
 
