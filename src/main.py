@@ -63,7 +63,22 @@ def fix_container(container_name):
 print("Analyzing Docker containers...")
 get_containers()
 
+def run_agent():
+    issue = detect_issues()
+    if not issue:
+        print("No issue detected. All container are running smoothly.")
 
+    for i in issue:
+        print(f"\n Issue detected in container '{i['name']}' (status: {i['status']}), ID: {i['id']}")
+        logs = get_logs(i['name'])
+        diagonosis = analyze_logs(logs, i['name'])
+        logging.info(f"Diagnosis for container '{i['name'] }:\{diagonosis}")
+        fix_container(i['name'])
+
+    else:
+        print("All issues have been addressed.")
+    logging.info(f"Agent run completed at {datetime.now()}")
+    time.sleep(60) 
 
 
 
