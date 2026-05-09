@@ -25,7 +25,7 @@ llm = LLM(
 
 
 def run_crew():
-    logging.info("🚀 Assembling crew...")
+    logging.info(" Assembling crew...")
 
     monitor = get_monitor_agent(llm)
     analyzer = get_analyzer_agent(llm)

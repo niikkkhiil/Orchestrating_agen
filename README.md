@@ -38,8 +38,8 @@ This agent removes that loop entirely.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                Self-Healing Agent Loop               │
-│                                                      │
+│                Self-Healing Agent Loop              │
+│                                                     │
 │  ┌─────────┐    ┌──────────┐    ┌─────────────────┐ │
 │  │ Monitor │───▶│ Analyzer │───▶│    Executor     │ │
 │  │  Agent  │    │  Agent   │    │     Agent       │ │
@@ -47,11 +47,11 @@ This agent removes that loop entirely.
 │  │ Watches │    │ Diagnoses│    │ Restarts/Fixes  │ │
 │  │ Docker  │    │  failure │    │   container     │ │
 │  └─────────┘    └──────────┘    └─────────────────┘ │
-│                      │                   │           │
-│                      ▼                   ▼           │
+│                      │                   │          │
+│                      ▼                   ▼          │
 │               ┌────────────────────────────────┐    │
-│               │     Memory (FAISS + MCP)        │    │
-│               │  Stores past incidents & fixes  │    │
+│               │     Memory (FAISS + MCP)       │    │
+│               │  Stores past incidents & fixes │    │
 │               └────────────────────────────────┘    │
 └─────────────────────────────────────────────────────┘
 ```
@@ -143,7 +143,7 @@ python3 agents.py
 - [x] **Step 2** — Detect unhealthy/exited containers
 - [x] **Step 3** — Auto-restart failed containers
 - [x] **Step 4** — LLM-powered failure analysis (OpenAI)
-- [ ] **Step 5** — Multi-agent architecture (CrewAI)
+- [x] **Step 5** — Multi-agent architecture (CrewAI)
 - [ ] **Step 6** — Incident memory (FAISS + MCP)
 - [ ] **Step 7** — Full observability (Langfuse + eval suite)
 - [ ] **Step 8** — CI/CD pipeline + Docker deployment
@@ -162,15 +162,15 @@ Every agent action will be traced with Langfuse:
 
 ## 🤝 Contributing
 
-This is a personal learning project — but PRs and feedback are welcome.
+This is a personal project, but PRs and feedback are welcome.
 
 ---
 
 ## 📄 License
-
 MIT
 
 ---
 
 > Built by [Nikhil Ganorkar](https://github.com/niikkkhiil) — DevOps & AI/ML Engineer
+
 > Part of learning journey: Python → FastAPI → LLM Engineering → Agentic Systems

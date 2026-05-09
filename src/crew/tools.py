@@ -40,7 +40,7 @@ def get_container_logs(container_name: str) -> str:
 
         container_name = str(container_name).strip()
 
-        # try exact match first
+        # trying exact match first
         try:
             container = client.containers.get(container_name)
         except Exception:
