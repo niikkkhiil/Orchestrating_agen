@@ -1,0 +1,9 @@
+[
+  {
+    "container_name": "test-nginx",
+    "logs_preview": "Error: port 80 already in use. Address already bound.",
+    "diagnosis": "Port 80 is already occupied by another process.",
+    "fix": "Restart the container. If recurring, check for port conflicts.",
+    "timestamp": "2026-05-10T12:51:18.588981"
+  }
+]
