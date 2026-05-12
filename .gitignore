@@ -2,4 +2,4 @@ orch
 .env
 *.log
 *.tmp
-memory/
+memory/*
