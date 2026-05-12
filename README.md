@@ -1,8 +1,8 @@
 # 🛡️ Self-Healing DevOps Agent
 
-An autonomous infrastructure monitoring and remediation system that detects Docker container failures, diagnose them using AI and fixes them automatically, with zero human intervention.
+An autonomous infrastructure monitoring and remediation system that detects Docker container failures, diagnoses them using AI, and fixes them automatically, with zero human intervention.
 
-> **Status:** 🚧 In Progress — actively building
+> **Status:** 🚧 Actively building — Step 9 (Dockerise) in progress
 
 ---
 
@@ -13,7 +13,7 @@ When a Docker container crashes in production, someone has to:
 - SSH into the server
 - Read the logs
 - Diagnose the issue
-- Manually restart or fix it
+- Manually apply the right fix
 
 **This takes 15–60 minutes and requires human attention.**
 
@@ -27,35 +27,52 @@ This agent removes that loop entirely.
 |---|---|
 | Container crashes | Container crashes |
 | Human gets paged | Agent detects in seconds |
-| Human reads logs | LLM analyzes logs |
-| Human applies fix | Agent applies fix |
-| Human writes report | Incident logged to memory |
-| **15–60 minutes downtime** | **Under 5 seconds** |
+| Human reads logs | LLM + error detection analyzes logs |
+| Human applies fix | Agent applies smart fix based on error type |
+| Human writes report | Incident saved to FAISS memory |
+| Slack fills with noise | Only critical alerts sent to Slack |
+| **15–60 minutes downtime** | **Under 30 seconds** |
+
+---
+
+## 🧠 Smart Error Detection
+
+The agent doesn't just restart blindly. It detects the specific error type and applies the right fix:
+
+| Error Type | Detection | Action |
+|---|---|---|
+| OOMKilled | Exit code 137 / OOMKilled flag | Increase memory limit → restart |
+| Port conflict | "address already in use" in logs | Free port → restart |
+| Clean exit | Exit code 0 | Simple restart |
+| App crash | Exit code 1 + crash logs | Restart → Slack alert |
+| Config error | Missing env vars in logs | Alert Slack for human review |
+| Disk full | "no space left on device" | Docker prune → restart |
+| Network error | "connection refused" in logs | Wait 10s → restart |
+| Unknown | Any other failure | Restart → Slack alert |
 
 ---
 
 ## 🏗️ Architecture
 
-
 ```
-
-┌─────────────────────────────────────────────────────┐
-│                Self-Healing Agent Loop              │
-│                                                     │
-│  ┌─────────┐    ┌──────────┐    ┌─────────────────┐ │
-│  │ Monitor │───▶│ Analyzer │───▶│    Executor     │ │
-│  │  Agent  │    │  Agent   │    │     Agent       │ │
-│  │         │    │  (LLM)   │    │                 │ │
-│  │ Watches │    │ Diagnoses│    │ Restarts/Fixes  │ │
-│  │ Docker  │    │  failure │    │   container     │ │
-│  └─────────┘    └──────────┘    └─────────────────┘ │
-│                      │                   │          │
-│                      ▼                   ▼          │
-│               ┌────────────────────────────────┐    │
-│               │     Memory (FAISS + MCP)       │    │
-│               │  Stores past incidents & fixes │    │
-│               └────────────────────────────────┘    │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                  Self-Healing Agent Loop                    │
+│                                                             │
+│  ┌──────────┐   ┌────────────────┐   ┌──────────────────┐   │
+│  │ Monitor  │──▶│    Analyzer    │──▶│    Executor      │   │
+│  │  Agent   │   │    Agent       │   │    Agent         │   │
+│  │          │   │                │   │                  │   │
+│  │ Detects  │   │ 1. Check FAISS │   │ SmartFix based   │   │
+│  │ failed   │   │ 2. Detect error│   │ on error type    │   │
+│  │containers│   │ 3. Save memory │   │ + Slack alerts   │   │
+│  └──────────┘   └────────────────┘   └──────────────────┘   │
+│                         │                      │            │
+│                         ▼                      ▼            │
+│              ┌────────────────┐    ┌─────────────────────┐  │
+│              │  FAISS Memory  │    │   Langfuse Traces   │  │
+│              │ Past incidents │    │ Full observability  │  │
+│              └────────────────┘    └─────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -64,13 +81,14 @@ This agent removes that loop entirely.
 
 | Technology | Role |
 |---|---|
-| `Python` | Core language |
+| `Python 3.11` | Core language |
 | `docker-py` | Docker container control |
-| `OpenAI API` | LLM-powered failure analysis |
-| `CrewAI` | Multi-agent orchestration |
+| `CrewAI 1.14` | Multi-agent orchestration |
+| `Groq (Llama 3.3 70B)` | LLM — fast, free inference |
 | `FAISS` | Vector memory for past incidents |
-| `MCP` | Persistent memory protocol |
 | `Langfuse` | LLM observability & tracing |
+| `Slack Webhooks` | Critical alerts to humans |
+| `Ollama` | Local LLM fallback (llama3.2) |
 
 ---
 
@@ -79,14 +97,20 @@ This agent removes that loop entirely.
 ```
 self-healing-agent/
 ├── src/
-│   ├── agents.py          # Monitor + Executor agents
-│   ├── analyzer.py        # LLM diagnosis (coming)
-│   ├── memory.py          # FAISS + MCP memory (coming)
-│   └── observability.py   # Langfuse tracing (coming)
-├── tests/
-│   └── golden_cases/      # 30 eval test cases (coming)
-├── docker-compose.yml     # Test environment
+│   ├── main.py              ← Entry point + monitoring loop
+│   └── crew/
+│       ├── __init__.py
+│       ├── agents.py        ← 3 CrewAI agents
+│       ├── tasks.py         ← Task definitions
+│       ├── tools.py         ← Docker + memory + Slack tools
+│       └── memory.py        ← FAISS incident memory
+├── memory/
+│   ├── incidents.index      ← FAISS vector index
+│   └── incidents.json       ← Incident history
+├── .env                     ← API keys (never commit)
+├── .gitignore
 ├── requirements.txt
+├── Dockerfile               ← Coming Step 9
 └── README.md
 ```
 
@@ -95,84 +119,106 @@ self-healing-agent/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.11+
 - Docker installed and running
-- OpenAI API key (for Step 4+)
+- Groq API key (free at console.groq.com)
+- Langfuse account (free at cloud.langfuse.com)
+- Slack webhook (optional, for alerts)
 
 ### Installation
 
 ```bash
 # Clone the repo
-git clone https://github.com/niikkkhiil/self-healing-agent
+git clone https://github.com/niikkkhiil/Orchestrating_agent
 cd self-healing-agent
 
 # Create virtual environment
-python3 -m venv orch
+python3.11 -m venv orch
 source orch/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
+### Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+`.env` file:
+```
+OPENAI_API_KEY=dummy-not-used
+GROQ_API_KEY=your-groq-key
+LANGFUSE_PUBLIC_KEY=pk-lf-your-key
+LANGFUSE_SECRET_KEY=sk-lf-your-key
+LANGFUSE_HOST=https://cloud.langfuse.com
+SLACK_WEBHOOK_URL=https://hooks.slack.com/your-webhook
+```
+
 ### Run the agent
 
 ```bash
 cd src
-python3 agents.py
+python3 main.py
 ```
 
-### Test it — simulate a failure
+### Simulate a failure to test
 
 ```bash
-# Terminal 1 — start a test container
-docker run -d --name test-nginx nginx
+# Terminal 1 — run the agent
+python3 main.py
 
-# Terminal 2 — run the agent
-python3 agents.py
-
-# Now stop the container to simulate a crash
+# Terminal 2 — simulate a container failure
 docker stop test-nginx
 
-# Run the agent again — it detects and fixes automatically
-python3 agents.py
+# Watch Terminal 1 — agent detects, diagnoses, and fixes automatically
 ```
+
+---
+
+## 📊 Observability
+
+Every scan is traced in Langfuse:
+- Which agent ran and what it decided
+- Token cost per incident
+- Latency per agent
+- Error type detected
+- Fix applied
+
+View your traces at: `cloud.langfuse.com`
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] **Step 1** — List all running Docker containers
-- [x] **Step 2** — Detect unhealthy/exited containers
+- [x] **Step 1** — List all Docker containers
+- [x] **Step 2** — Detect unhealthy containers
 - [x] **Step 3** — Auto-restart failed containers
-- [x] **Step 4** — LLM-powered failure analysis (OpenAI)
-- [x] **Step 5** — Multi-agent architecture (CrewAI)
-- [x] **Step 6** — Incident memory (FAISS + MCP)
-- [x] **Step 7** — Full observability (Langfuse + eval suite)
-- [ ] **Step 8** — CI/CD pipeline + Docker deployment
-
----
-
-## 📊 Observability (Coming — Step 7)
-
-Every agent action will be traced with Langfuse:
-- Token cost per incident
-- Latency per agent
-- Fix success rate
-- 30 golden test cases with regression gates
+- [x] **Step 4** — LLM-powered log analysis (Groq + Llama 3.3 70B)
+- [x] **Step 5** — Continuous monitoring loop (5 min interval)
+- [x] **Step 6** — CrewAI multi-agent system (Monitor + Analyzer + Executor)
+- [x] **Step 7** — FAISS incident memory (check before LLM call)
+- [x] **Step 8** — Langfuse observability (traces every scan)
+- [x] **Step 8b** — Smart error detection (OOM, port conflict, crash, disk full)
+- [x] **Step 8c** — Slack alerts for critical failures
+- [ ] **Step 9** — Dockerise the agent (docker-compose)
+- [ ] **Step 10** — CI/CD pipeline (GitHub Actions)
 
 ---
 
 ## 🤝 Contributing
 
-This is a personal project, but PRs and feedback are welcome.
+This is a personal project — but PRs and feedback are welcome.
 
 ---
 
 ## 📄 License
+
 MIT
 
 ---
 
 > Built by [Nikhil Ganorkar](https://github.com/niikkkhiil) — DevOps & AI/ML Engineer
-
-> Part of learning journey: Python → FastAPI → LLM Engineering → Agentic Systems
+> Stack: Python · CrewAI · Groq · FAISS · Langfuse · Docker

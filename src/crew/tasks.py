@@ -14,42 +14,39 @@ def get_monitor_task(agent):
 def get_analyzer_task(agent, context):
     return Task(
         description="""
-        For each failed container identified by the monitor:
-        1. Search memory using SearchMemory tool with the container name
-        2. If MEMORY HIT — use the known fix directly
+        For each failed container:
+        1. Use SearchIncidents tool with the container name
+        2. If MEMORY HIT — use known fix directly
         3. If NO MEMORY HIT:
-           - Fetch logs using GetContainerLogs
-           - Analyze root cause
-           - Save to memory using SaveToMemory: 'container_name|||diagnosis|||fix'
+           - Use AnalyzeErrorType with container name
+           - Save to memory using SaveIncident: 'name|||error_type|||action'
+        Always include error type in your output.
         """,
         expected_output="""
-        For each failed container:
-        - Container: <name>
-        - Source: MEMORY or LLM ANALYSIS
-        - Cause: <cause>
-        - Fix: <fix>
+        Container: <name>
+        Error Type: <type>
+        Source: MEMORY or ANALYSIS
+        Recommended Action: <action>
         """,
         agent=agent,
         context=context
     )
-
 
 def get_executor_task(agent, context):
     return Task(
         description="""
-        Based on the analyst's recommendations:
-        1. Restart each failed container
-        2. Confirm whether the restart was successful
-        3. Report the final status of each container
+        Based on analyst findings:
+        1. Use SmartFix with: 'container_name|||error_type'
+        2. If error is APP_CRASH or UNKNOWN — also send SlackAlert
+        3. Report final status
         """,
         expected_output="""
-        For each container actioned:
-        - Container: <name>
-        - Action taken: <restart/skip>
-        - Result: <success/failed>
-        - Final status: <running/still failing>
+        Container: <name>
+        Action taken: <action>
+        Result: <success/failed>
+        Alert sent: <yes/no>
+        Final status: <running/needs attention>
         """,
         agent=agent,
         context=context
     )
-

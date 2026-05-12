@@ -1,4 +1,4 @@
-from crew.memory import save_to_memory, search_memory, get_memory_stats
+from src.crew.memory import save_to_memory, search_memory, get_memory_stats
 
 print("=== Testing Memory ===\n")
 

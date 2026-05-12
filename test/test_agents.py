@@ -1,4 +1,4 @@
-from crew.agents import get_monitor_agent, get_analyzer_agent, get_executor_agent
+from src.crew.agents import get_monitor_agent, get_analyzer_agent, get_executor_agent
 
 monitor = get_monitor_agent()
 analyzer = get_analyzer_agent()

@@ -48,16 +48,16 @@ def run_crew():
 
 
 def main():
-    logging.info("🔍 Starting Self-Healing Agent...")
+    logging.info("Starting Self-Healing Agent...")
     langfuse.auth_check()
-    logging.info("📊 Langfuse tracing active")
+    logging.info("Langfuse tracing active")
 
     while True:
         with langfuse.start_as_current_observation(
             name="self-healing-scan"
         ) as observation:
             try:
-                logging.info(f"⏰ Scan started at {datetime.now()}")
+                logging.info(f"Scan started at {datetime.now()}")
                 crew = run_crew()
                 result = crew.kickoff()
 
@@ -65,7 +65,7 @@ def main():
                     input={"scan_time": datetime.now().isoformat()},
                     output={"result": str(result), "status": "success"}
                 )
-                logging.info(f"✅ Scan complete:\n{result}")
+                logging.info(f"Scan complete:\n{result}")
 
             except Exception as e:
                 error_msg = str(e)
@@ -73,11 +73,11 @@ def main():
                     output={"status": "error", "error": error_msg}
                 )
                 if "rate_limit_exceeded" in error_msg:
-                    logging.warning("⏳ Groq rate limit — waiting 2 minutes...")
+                    logging.warning("Groq rate limit — waiting 2 minutes...")
                     time.sleep(120)
                     continue
                 else:
-                    logging.error(f"❌ Error: {e}")
+                    logging.error(f"Error: {e}")
 
         langfuse.flush()
         logging.info("⏳ Next scan in 5 minutes...\n")

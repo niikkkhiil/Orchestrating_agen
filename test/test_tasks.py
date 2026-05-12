@@ -1,5 +1,5 @@
-from crew.agents import get_monitor_agent, get_analyzer_agent, get_executor_agent
-from crew.tasks import get_monitor_task, get_analyzer_task, get_executor_task
+from src.crew.agents import get_monitor_agent, get_analyzer_agent, get_executor_agent
+from src.crew.tasks import get_monitor_task, get_analyzer_task, get_executor_task
 
 monitor = get_monitor_agent()
 analyzer = get_analyzer_agent()

@@ -87,7 +87,7 @@ def restart_container(container_name: str) -> str:
         return f"Failed to restart {container_name}: {e}"
     
 
-@tool("MemorySearch")
+@tool("SearchIncidents")
 def search_memory_tool(container_name: str) -> str:
     """Search past incidents by container name. Input: just the container name string."""
     try:
@@ -100,7 +100,7 @@ def search_memory_tool(container_name: str) -> str:
         return f"Error: {e}"
 
 
-@tool("MemorySave")
+@tool("SaveIncident")
 def save_memory_tool(container_name: str) -> str:
     """Save container incident to memory. Input: 'name|||diagnosis|||fix'"""
     try:
@@ -178,5 +178,96 @@ def analyze_error_type(container_name: str) -> str:
 @tool("SmartFix")
 def smart_fix(input: str) -> str:
     """Apply the right fix based on error type. Input: 'container_name|||error_type'"""
+    try:
+        parts = input.split("|||")
+        container_name = parts[0].strip()
+        error_type = parts[1].strip() if len(parts) > 1 else "UNKNOWN"
 
-    try:           
+        try:
+            container = client.containers.get(container_name)
+        except Exception:
+            all_containers = client.containers.list(all=True)
+            container = next(
+                (c for c in all_containers
+                 if c.short_id in container_name or c.name in container_name),
+                None
+            )
+            if not container:
+                return f"Container not found: {container_name}"
+
+        if "OOM_KILLED" in error_type:
+            # Increase memory limit and restart
+            container.update(mem_limit="512m", memswap_limit="512m")
+            container.restart()
+            return f"Increased memory limit to 512MB and restarted: {container_name}"
+
+        elif "PORT_CONFLICT" in error_type:
+            # Just restart — Docker will handle port reassignment
+            container.restart()
+            return f"Restarted container (port conflict): {container_name} — check port config if recurring"
+
+        elif "CLEAN_EXIT" in error_type:
+            container.restart()
+            return f"Restarted cleanly stopped container: {container_name}"
+
+        elif "DISK_FULL" in error_type:
+            # Prune unused Docker resources
+            import subprocess
+            subprocess.run(["docker", "system", "prune", "-f"], capture_output=True)
+            container.restart()
+            return f"Pruned Docker system and restarted: {container_name}"
+
+        elif "NETWORK_ERROR" in error_type:
+            # Wait 10 seconds then restart to let dependencies come up
+            import time
+            time.sleep(10)
+            container.restart()
+            return f"Waited 10s for dependencies then restarted: {container_name}"
+
+        elif "APP_CRASH" in error_type or "UNKNOWN" in error_type:
+            container.restart()
+            return f"Restarted {container_name} — manual review recommended (exit code 1)"
+
+        else:
+            container.restart()
+            return f"Restarted: {container_name}"
+
+    except Exception as e:
+        return f"Fix failed: {e}"
+
+
+@tool("PruneDocker")
+def prune_docker(input: str = "") -> str:
+    """Remove unused Docker containers, images and volumes to free disk space."""
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["docker", "system", "prune", "-f"],
+            capture_output=True, text=True
+        )
+        return f" Docker pruned:\n{result.stdout}"
+    except Exception as e:
+        return f"Prune failed: {e}"      
+
+
+@tool("SlackAlert")
+def slack_alert(message: str) -> str:
+    """Send an alert to Slack when a container issue needs human attention."""
+    try:
+        import requests
+        import os
+        webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+        if not webhook_url:
+            return "Slack webhook not configured — skipping alert"
+
+        payload = {
+            "text": f" *Self-Healing Agent Alert*\n{message}",
+            "username": "Self-Healing Agent",
+            "icon_emoji": ":robot_face:"
+        }
+        response = requests.post(webhook_url, json=payload)
+        if response.status_code == 200:
+            return f"Slack alert sent"
+        return f" Slack alert failed: {response.status_code}"
+    except Exception as e:
+        return f"Slack error: {e}"
