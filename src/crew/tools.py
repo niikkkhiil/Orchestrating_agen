@@ -16,8 +16,8 @@ def list_containers(input: str = "") -> str:
     return "\n".join(result)
 
 
-@tool("DetectFailedContainers")
-def detect_failed_containers(input: str = "") -> str:
+@tool("detect_failed_containers")
+def detect_failed_containers(dummy: str = "") -> str:
     """Detects Docker containers that have stopped unexpectedly (status: exited or dead)."""
     containers = client.containers.list(all=True)
     issues = []
@@ -60,7 +60,7 @@ def get_container_logs(container_name: str) -> str:
         return f"Error retrieving logs: {e}"
 
 
-@tool("RestartContainer")
+@tool("restart_container")
 def restart_container(container_name: str) -> str:
     """Restarts a Docker container by name or ID."""
     try:
@@ -87,8 +87,8 @@ def restart_container(container_name: str) -> str:
         return f"Failed to restart {container_name}: {e}"
     
 
-@tool("SearchIncidents")
-def search_memory_tool(container_name: str) -> str:
+@tool("search_incidents")
+def search_incidents(container_name: str) -> str:
     """Search past incidents by container name. Input: just the container name string."""
     try:
         from crew.memory import search_memory
@@ -100,8 +100,8 @@ def search_memory_tool(container_name: str) -> str:
         return f"Error: {e}"
 
 
-@tool("SaveIncident")
-def save_memory_tool(container_name: str) -> str:
+@tool("save_incident")
+def save_incident(container_name: str) -> str:
     """Save container incident to memory. Input: 'name|||diagnosis|||fix'"""
     try:
         parts = container_name.split("|||")
@@ -119,10 +119,9 @@ def save_memory_tool(container_name: str) -> str:
         return f"Error: {e}"
     
 
-@tool("AnalyzeErrorType")
+@tool("analyze_error_type")
 def analyze_error_type(container_name: str) -> str:
-    """Analyze container logs and return the specify error type and recommand action on it."""
-
+    """Analyze container logs and return the error type and recommended action."""
     try:
         if isinstance(container_name, dict):
             container_name = container_name.get("container_name", "")
@@ -131,10 +130,8 @@ def analyze_error_type(container_name: str) -> str:
 
         try:
             container = client.containers.get(container_name)
-        
         except Exception:
             all_containers = client.containers.list(all=True)
-
             container = next(
                 (c for c in all_containers
                  if c.short_id in container_name or c.name in container_name),
@@ -142,44 +139,37 @@ def analyze_error_type(container_name: str) -> str:
             )
             if not container:
                 return f"Container not found: {container_name}"
-            
-            logs = container.logs(tail=50).decode("utf-8")
-            attrs = container.attrs
-            exit_code = attrs.get('State', {}).get('ExitCode', "-1")
-            oom_killed = attrs.get('State', {}).get('OOMKilled', False)
 
-            if oom_killed or exit_code == 137 or "killed" in logs:
-                return "ERROR_TYPE: OOM_KILLED | ACTION: increase_memory | SEVERITY: high"
+        logs = container.logs(tail=50).decode("utf-8")
+        attrs = container.attrs
+        exit_code = attrs.get('State', {}).get('ExitCode', -1)
+        oom_killed = attrs.get('State', {}).get('OOMKilled', False)
 
-            elif "address already in use" in logs or "port" in logs and "bind" in logs:
-                return "ERROR_TYPE: PORT_CONFLICT | ACTION: free_port | SEVERITY: medium"
-
-            elif exit_code == 0:
-                return "ERROR_TYPE: CLEAN_EXIT | ACTION: restart | SEVERITY: low"
-
-            elif exit_code == 1 and any(x in logs for x in ["env", "config", "missing", "keyerror"]):
-                return "ERROR_TYPE: CONFIG_ERROR | ACTION: check_env_vars | SEVERITY: high"
-
-            elif exit_code == 1:
-                return "ERROR_TYPE: APP_CRASH | ACTION: restart_and_alert | SEVERITY: high"
-
-            elif "no space left" in logs:
-                return "ERROR_TYPE: DISK_FULL | ACTION: prune_docker | SEVERITY: critical"
-
-            elif "connection refused" in logs or "could not connect" in logs:
-                return "ERROR_TYPE: NETWORK_ERROR | ACTION: restart_with_delay | SEVERITY: medium"
-
+        if oom_killed or exit_code == 137 or "killed" in logs:
+            return "ERROR_TYPE: OOM_KILLED | ACTION: increase_memory | SEVERITY: high"
+        elif "address already in use" in logs or ("port" in logs and "bind" in logs):
+            return "ERROR_TYPE: PORT_CONFLICT | ACTION: free_port | SEVERITY: medium"
+        elif exit_code == 0:
+            return "ERROR_TYPE: CLEAN_EXIT | ACTION: restart | SEVERITY: low"
+        elif exit_code == 1 and any(x in logs for x in ["env", "config", "missing", "keyerror"]):
+            return "ERROR_TYPE: CONFIG_ERROR | ACTION: check_env_vars | SEVERITY: high"
+        elif exit_code == 1:
+            return "ERROR_TYPE: APP_CRASH | ACTION: restart_and_alert | SEVERITY: high"
+        elif "no space left" in logs:
+            return "ERROR_TYPE: DISK_FULL | ACTION: prune_docker | SEVERITY: critical"
+        elif "connection refused" in logs or "could not connect" in logs:
+            return "ERROR_TYPE: NETWORK_ERROR | ACTION: restart_with_delay | SEVERITY: medium"
         else:
             return f"ERROR_TYPE: UNKNOWN | EXIT_CODE: {exit_code} | ACTION: restart_and_alert | SEVERITY: medium"
 
     except Exception as e:
         return f"Error analyzing container: {e}"
             
-@tool("SmartFix")
-def smart_fix(input: str) -> str:
-    """Apply the right fix based on error type. Input: 'container_name|||error_type'"""
+@tool("smart_fix")
+def smart_fix(container_and_error: str) -> str:
+    """Apply the right fix based on error type. Input format: 'container_name|||error_type'"""
     try:
-        parts = input.split("|||")
+        parts = container_and_error.split("|||")
         container_name = parts[0].strip()
         error_type = parts[1].strip() if len(parts) > 1 else "UNKNOWN"
 
@@ -236,8 +226,8 @@ def smart_fix(input: str) -> str:
         return f"Fix failed: {e}"
 
 
-@tool("PruneDocker")
-def prune_docker(input: str = "") -> str:
+@tool("prune_docker")
+def prune_docker(dummy: str = "") -> str:
     """Remove unused Docker containers, images and volumes to free disk space."""
     try:
         import subprocess
@@ -250,7 +240,7 @@ def prune_docker(input: str = "") -> str:
         return f"Prune failed: {e}"      
 
 
-@tool("SlackAlert")
+@tool("slack_alert")
 def slack_alert(message: str) -> str:
     """Send an alert to Slack when a container issue needs human attention."""
     try:

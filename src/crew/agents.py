@@ -3,8 +3,8 @@ from crew.tools import (
     detect_failed_containers,
     get_container_logs,
     restart_container,
-    search_memory_tool,
-    save_memory_tool,
+    search_incidents,
+    save_incident,
     analyze_error_type,
     smart_fix,
     slack_alert,
@@ -33,7 +33,7 @@ def get_analyzer_agent(llm):
         containerized failures. You check memory first, then use 
         AnalyzeErrorType to understand exactly what went wrong.""",
         tools=[get_container_logs, analyze_error_type,
-               search_memory_tool, save_memory_tool],
+               search_incidents, save_incident],
         llm=llm,
         verbose=True
     )

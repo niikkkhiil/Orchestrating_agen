@@ -25,7 +25,7 @@ langfuse = Langfuse(
 )
 
 llm = LLM(
-    model="groq/llama-3.3-70b-versatile",
+    model="groq/meta-llama/llama-4-scout-17b-16e-instruct",
     api_key=os.getenv("GROQ_API_KEY")
 )
 
@@ -80,8 +80,8 @@ def main():
                     logging.error(f"Error: {e}")
 
         langfuse.flush()
-        logging.info("⏳ Next scan in 5 minutes...\n")
-        time.sleep(300)
+        logging.info("Next scan in 1 minutes...\n")
+        time.sleep(60)
 
 
 if __name__ == "__main__":
