@@ -1,0 +1,7 @@
+orch/
+__pycache__/
+*.pyc
+.git/
+*.md
+test_*.py
+.env.example

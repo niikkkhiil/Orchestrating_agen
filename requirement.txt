@@ -1,8 +1,0 @@
-Crewai
-linkup
-langchain
-fastapi
-docker
-ollama
-datetime
-langfuse

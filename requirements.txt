@@ -1,0 +1,15 @@
+crewai[litellm]
+langchain
+langchain-community
+fastapi
+docker
+ollama
+langfuse
+litellm
+faiss-cpu
+sentence-transformers
+numpy
+pydantic
+requests
+python-dotenv
+groq

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  self-healing-agent:
+    build: .
+    container_name: self-healing-agent
+    restart: unless-stopped
+    volumes:
+      # Mount Docker socket so agent can control other containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Persist FAISS memory between restarts
+      - ./memory:/app/memory
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
