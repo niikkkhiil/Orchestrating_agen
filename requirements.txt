@@ -1,11 +1,10 @@
-crewai[litellm]
+crewai[litellm]>=1.14.0
+litellm>=1.83.0
 langchain
 langchain-community
-fastapi
+langfuse
 docker
 ollama
-langfuse
-litellm
 faiss-cpu
 sentence-transformers
 numpy
@@ -13,3 +12,5 @@ pydantic
 requests
 python-dotenv
 groq
+openai
+mcp

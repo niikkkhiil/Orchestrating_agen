@@ -17,11 +17,13 @@ def get_analyzer_task(agent, context):
     return Task(
         description="""
         From the monitor output, get the failed container name.
-        Call SearchIncidents with that container name.
-        If NO MEMORY HIT, call AnalyzeErrorType with the container name, then call SaveIncident with 'container_name|||error_type|||action'.
+        If all containers are healthy, report that and stop — do not call any tools.
+        Otherwise, call search_incidents with the container name.
+        If NO MEMORY HIT, call analyze_error_type with the container name, then call save_incident with 'container_name|||error_type|||action'.
         Report the container name, error type, and action.
         """,
-        expected_output="""Container: <name>
+        expected_output="""All containers healthy. OR:
+Container: <name>
 Error Type: <type>
 Source: MEMORY or ANALYSIS
 Action: <action>""",
@@ -33,13 +35,13 @@ Action: <action>""",
 def get_executor_task(agent, context):
     return Task(
         description="""
-        Get container name and error type from analyzer output.
-        Steps:
-        1. Call FixContainer with format: container_name|||error_type
-        2. If error type contains CRASH or UNKNOWN call SendSlackAlert
-        3. Report result
+        From the analyzer output, if all containers are healthy, report that and stop — do not call any tools.
+        Otherwise get container name and error type, call smart_fix with format: container_name|||error_type.
+        If error type contains CRASH or UNKNOWN also call slack_alert.
+        Report result.
         """,
-        expected_output="""Container: <name>
+        expected_output="""All containers healthy. OR:
+Container: <name>
 Action taken: <action>
 Result: <success/failed>
 Alert sent: <yes/no>

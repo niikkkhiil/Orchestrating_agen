@@ -5,10 +5,11 @@ services:
     build: .
     container_name: self-healing-agent
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
-      # Mount Docker socket so agent can control other containers
       - /var/run/docker.sock:/var/run/docker.sock
-      # Persist FAISS memory between restarts
       - ./memory:/app/memory
     env_file:
       - .env
