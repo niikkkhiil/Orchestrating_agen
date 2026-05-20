@@ -2,8 +2,6 @@
 
 An autonomous infrastructure monitoring and remediation system that detects Docker container failures, diagnoses them using AI, and fixes them automatically, with zero human intervention.
 
-> **Status:** 🚧 Actively building — Step 9 (Dockerise) in progress
-
 ---
 
 ## 💡 The Problem
@@ -203,8 +201,8 @@ View your traces at: `cloud.langfuse.com`
 - [x] **Step 8** — Langfuse observability (traces every scan)
 - [x] **Step 8b** — Smart error detection (OOM, port conflict, crash, disk full)
 - [x] **Step 8c** — Slack alerts for critical failures
-- [ ] **Step 9** — Dockerise the agent (docker-compose)
-- [ ] **Step 10** — CI/CD pipeline (GitHub Actions)
+- [x] **Step 9** — Dockerise the agent (docker-compose)
+- [x] **Step 10** — CI/CD pipeline (GitHub Actions)
 
 ---
 
